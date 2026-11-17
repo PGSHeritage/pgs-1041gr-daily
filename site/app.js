@@ -2,7 +2,7 @@
 /* 1041GR Daily Report — offline-first field reporting
    Supabase project: pgs-1041gr-reporting. Static site; no build step. */
 
-const APP_VERSION = '1.3.3';
+const APP_VERSION = '1.3.4';
 const INACTIVE_DAYS = 14;        // sign in again after this many days without opening the app
 const LAST_ACTIVE_KEY = 'gr1041-last-active';
 const SB_URL = 'https://alevpanognwhxmrnnrfy.supabase.co';
@@ -444,7 +444,9 @@ function bindSignIn() {
     const btn = f.querySelector('button'); btn.disabled = true;
     const { error } = await sb.auth.signInWithOtp({ email: SI.email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname } });
     btn.disabled = false;
-    if (error) SI.msg = /Database error|not been invited|Signups not allowed/i.test(error.message) ? 'This email has not been invited yet. Ask the office to add you.' : error.message;
+    if (error) SI.msg = /Database error|not been invited|Signups not allowed/i.test(error.message) ? 'This email has not been invited yet. Ask the office to add you.'
+      : /rate limit|too many|security purposes/i.test(error.message) ? 'Too many sign-in emails have been sent this hour. Ask the office for a sign-in code, then tap "Enter it here" below.'
+      : error.message;
     else SI.sent = true;
     route();
   };

@@ -1,6 +1,6 @@
 // 1041GR Daily Report — service worker: keeps the app itself on the phone so it opens without signal.
 // Bump VERSION whenever any site file changes, so phones pick up the new version.
-const VERSION = 'gr1041-v1.3.3';
+const VERSION = 'gr1041-v1.3.4';
 const SHELL = ['./', 'index.html', 'app.js', 'app.css', 'supabase.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'logo.png', 'logo-white.png'];
 
 self.addEventListener('install', e => {

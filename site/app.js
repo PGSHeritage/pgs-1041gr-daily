@@ -2,7 +2,7 @@
 /* 1041GR Daily Report — offline-first field reporting
    Supabase project: pgs-1041gr-reporting. Static site; no build step. */
 
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.2';
 const INACTIVE_DAYS = 14;        // sign in again after this many days without opening the app
 const LAST_ACTIVE_KEY = 'gr1041-last-active';
 const SB_URL = 'https://alevpanognwhxmrnnrfy.supabase.co';
@@ -1046,7 +1046,7 @@ async function setActive(id, on) {
 }
 async function signinLink(email) {
   const { data: { session } } = await sb.auth.getSession();
-  const res = await fetch(SB_URL + '/functions/v1/signin-link', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ email, redirectTo: location.origin + location.pathname }) });
+  const res = await fetch(SB_URL + '/functions/v1/signin-link', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ email, redirectTo: location.hostname.endsWith('.pages.dev') ? NEW_HOME : location.origin + location.pathname }) });
   const out = await res.json().catch(() => ({}));
   if (!res.ok || !out.link) return toast(out.error || 'Could not create a link', 6000);
   const msg = `Your sign-in link for the 1041GR daily report app (opens once, valid about an hour): ${out.link}`;

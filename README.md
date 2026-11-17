@@ -44,6 +44,7 @@ None are stored here. The publishable key in `site/app.js` is meant to be public
 
 | Version | Date | What changed |
 |---|---|---|
+| 1.3.2 | 17 Nov 2026 | Sign-in links made on the old address now open the new one |
 | 1.3.1 | 17 Nov 2026 | Moved to GitHub and a Cloudflare Worker; the old pages.dev address shows a "moved" notice |
 | 1.3.0 | 17 Nov 2026 | Daily summary; totals before the app; "up to previous day" column; key statistics from the 16 Nov daily summary |
 | 1.2.0 | 6 Nov 2026 | Cancel; change history; Excel download; sign in again after 14 days without use |

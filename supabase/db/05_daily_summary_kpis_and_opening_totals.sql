@@ -1,0 +1,6 @@
+-- App 1.3.0 (17 Nov 2026). Full text in the Supabase migration history (daily_summary_kpis_and_opening_totals).
+-- kpi_opening(kpi_id, team_id, amount, as_of, note): totals from before the app; read by all active users, written by admins.
+-- New key statistics, listed first (earlier six moved to sort +20, still active):
+--   Identified graves, Interviewed PAPs, Graves field assessed, Graves not yet assessed, Assessment status pending,
+--   Graves to central cemetery, Graves moving with PAP
+-- Opening totals for Grave Relocation Team up to 2026-11-14 (Daily Summary 16 Nov 2026): 238, 58, 152, 63, 23.

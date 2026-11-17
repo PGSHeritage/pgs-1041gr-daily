@@ -1,0 +1,9 @@
+-- Change history (app 1.2.0): report_change table, written only by save_report and triggers.
+-- Full text as applied is in the project's Supabase migration history (name: report_change_history).
+-- Summary:
+--   table report_change(report_id, project_id, team_id, report_date, at, user_id, action, before jsonb, after jsonb, note)
+--   RLS: office reads all, field reads own team; no insert/update/delete policies
+--   private.report_snapshot(rid) -> jsonb of the report, its KPIs and activities
+--   private.log_change(...) security definer insert
+--   save_report: snapshots before/after, logs created | submitted | edited (only when something changed), and replaced
+--   triggers: lock/unlock on daily_report.locked, photo added/removed on report_photo

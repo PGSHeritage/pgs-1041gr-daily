@@ -1,0 +1,6 @@
+// Cloudflare Worker settings: publish the static files in ./site as the "pgs-1041gr-daily" Worker.
+{
+  "name": "pgs-1041gr-daily",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./site" }
+}

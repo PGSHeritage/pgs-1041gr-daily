@@ -2,7 +2,7 @@
 /* 1041GR Daily Report — offline-first field reporting
    Supabase project: pgs-1041gr-reporting. Static site; no build step. */
 
-const APP_VERSION = '1.3.2';
+const APP_VERSION = '1.3.3';
 const INACTIVE_DAYS = 14;        // sign in again after this many days without opening the app
 const LAST_ACTIVE_KEY = 'gr1041-last-active';
 const SB_URL = 'https://alevpanognwhxmrnnrfy.supabase.co';
@@ -429,9 +429,9 @@ function viewSignIn() {
   ${!SI.sent ? `<p class="small muted">Use the email address the office invited. We'll send you a sign-in code.</p>
     <form id="siForm"><label class="f">Email<input id="siEmail" type="email" autocomplete="email" required value="${esc(SI.email)}"></label>
     <div class="actions"><button class="primary" type="submit">Send code</button></div></form>
-    <p class="small muted">Got a personal sign-in link from the office? Just open it on this phone.</p>`
-    : `<p class="small">We sent a code to <b>${esc(SI.email)}</b>. Enter it below.</p>
-    <form id="siCode"><label class="f">Code<input id="siTok" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="font-size:22px;letter-spacing:4px"></label>
+    <p class="small muted">Got a code from the office? <button class="link" id="siHave" type="button">Enter it here</button></p>`
+    : `<p class="small">${SI.manual ? 'Enter your email and the code the office sent you.' : `We sent a code to <b>${esc(SI.email)}</b>. Enter it below.`}</p>
+    <form id="siCode">${SI.manual ? `<label class="f">Email<input id="siEmail2" type="email" autocomplete="email" required value="${esc(SI.email)}"></label><br>` : ''}<label class="f">Code<input id="siTok" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="font-size:22px;letter-spacing:4px"></label>
     <div class="actions"><button class="primary" type="submit">Sign in</button><button type="button" id="siBack">Use another email</button></div></form>`}
   <div class="err" id="siErr">${esc(SI.msg)}</div>
   ${!navigator.onLine ? '<p class="note">You are offline. You need signal once to sign in; after that the app works offline.</p>' : ''}
@@ -451,10 +451,18 @@ function bindSignIn() {
   const c = $('#siCode');
   if (c) c.onsubmit = async e => {
     e.preventDefault();
-    const { error } = await sb.auth.verifyOtp({ email: SI.email, token: $('#siTok').value.trim(), type: 'email' });
-    if (error) { SI.msg = 'That code did not work: ' + error.message; route(); }
+    if ($('#siEmail2')) SI.email = $('#siEmail2').value.trim().toLowerCase();
+    const token = $('#siTok').value.replace(/\s/g, '');
+    let error;
+    // codes from the office's sign-in link are "magic link" codes; emailed codes are "email" codes
+    for (const type of ['email', 'magiclink', 'invite']) {
+      ({ error } = await sb.auth.verifyOtp({ email: SI.email, token, type }));
+      if (!error) break;
+    }
+    if (error) { SI.msg = 'That code did not work (it works once and for about an hour). Ask the office for a new one.'; route(); }
   };
   const b = $('#siBack'); if (b) b.onclick = () => { SI = { email: '', msg: '', sent: false }; route(); };
+  const hv = $('#siHave'); if (hv) hv.onclick = () => { SI = { email: ($('#siEmail') || {}).value || '', msg: '', sent: true, manual: true }; route(); };
 }
 
 /* ---------------- home ---------------- */
@@ -1049,9 +1057,15 @@ async function signinLink(email) {
   const res = await fetch(SB_URL + '/functions/v1/signin-link', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ email, redirectTo: location.hostname.endsWith('.pages.dev') ? NEW_HOME : location.origin + location.pathname }) });
   const out = await res.json().catch(() => ({}));
   if (!res.ok || !out.link) return toast(out.error || 'Could not create a link', 6000);
-  const msg = `Your sign-in link for the 1041GR daily report app (opens once, valid about an hour): ${out.link}`;
-  dlg('Sign-in link for ' + esc(email), `<p class="small">Send this to the person. It signs them in once on the phone where they open it.</p><textarea id="lnk" rows="5" readonly>${esc(out.link)}</textarea>`,
-    [['Copy', '', async d => { await navigator.clipboard.writeText(out.link); toast('Copied'); return false; }],
+  const home = location.hostname.endsWith('.pages.dev') ? NEW_HOME : location.origin + location.pathname;
+  const msg = out.code
+    ? `1041GR daily report app: open ${home} (from your home-screen icon if you have one), tap "Enter it here" under "Got a code from the office?", then enter your email and this code: ${out.code}\nThe code works once, for about an hour.`
+    : `Your sign-in link for the 1041GR daily report app (opens once, valid about an hour): ${out.link}`;
+  dlg('Sign-in for ' + esc(email), `${out.code ? `<p class="small">Best for phones that use the home-screen icon: send this <b>code</b>. They open the app, tap <b>Enter it here</b>, and type their email and the code.</p>
+    <p style="font-size:30px;letter-spacing:6px;font-weight:700;text-align:center;margin:8px 0">${esc(out.code)}</p>` : ''}
+    <p class="small">Or a <b>link</b>, which signs them in in the browser where it is opened (not in a home-screen icon):</p><textarea id="lnk" rows="4" readonly>${esc(out.link)}</textarea>
+    <p class="small muted">Code and link each work once, for about an hour. Making a new one cancels the old one.</p>`,
+    [['Copy message', '', async d => { await navigator.clipboard.writeText(msg); toast('Copied'); return false; }],
      ['WhatsApp', '', async () => { window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank'); return false; }],
      ['Done', 'primary', null]]);
 }

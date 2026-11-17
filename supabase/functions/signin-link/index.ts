@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     let r = await admin.auth.admin.generateLink({ type: "magiclink", email: e, options: { redirectTo } });
     if (r.error) r = await admin.auth.admin.generateLink({ type: "invite", email: e, options: { redirectTo } });
     if (r.error) return json({ error: r.error.message }, 400);
-    return json({ link: r.data.properties.action_link });
+    return json({ link: r.data.properties.action_link, code: r.data.properties.email_otp });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }

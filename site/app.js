@@ -2,7 +2,7 @@
 /* 1041GR Daily Report — offline-first field reporting
    Supabase project: pgs-1041gr-reporting. Static site; no build step. */
 
-const APP_VERSION = '1.3.4';
+const APP_VERSION = '1.3.5';
 const INACTIVE_DAYS = 14;        // sign in again after this many days without opening the app
 const LAST_ACTIVE_KEY = 'gr1041-last-active';
 const SB_URL = 'https://alevpanognwhxmrnnrfy.supabase.co';
@@ -577,7 +577,7 @@ function renderEdit(id) {
     <button class="good" onclick="submitReport()">${r.status === 'submitted' ? 'Save changes' : 'Submit report'}</button>
     <a class="btn" href="#/view/${r.id}">Preview</a>
     <button onclick="cancelEdit()">Cancel</button>
-    ${!r.updated_at ? `<button class="danger" onclick="discardReport()">Delete</button>` : ''}
+    ${canDelete(r) ? `<button class="danger" onclick="discardReport()">Delete report</button>` : ''}
   </div><div class="small muted" id="saveState">${r._dirty ? 'Saved on this phone; will be sent when there is signal.' : 'Sent.'}</div></div>`;
   $('#app').innerHTML = h;
   renderPhotos();
@@ -703,11 +703,23 @@ async function cancelEdit() {
   toast('Changes discarded.');
   location.hash = '#/'; renderNet(); sync();
 }
+// drafts: whoever may edit the report; submitted reports: office only (admin / supervisor)
+function canDelete(r) { return canEdit(r) && (!r.updated_at || r.status !== 'submitted' || isOffice()); }
 async function discardReport() {
-  if (!confirm('Delete this report from this phone? It has not been sent.')) return;
-  const id = ED.r.id; S.reports.delete(id); await DB.del('reports', id);
+  const r = ED.r, id = r.id, onServer = !!r.updated_at;
+  const what = `${fmtDate(r.report_date)} · ${teamName(r.team_id)}`;
+  if (onServer) {
+    if (!navigator.onLine) return toast('Deleting a report that has been sent needs signal.');
+    if (!confirm(`Delete the report for ${what} for everyone? ${r.status === 'submitted' ? 'It has been submitted. ' : ''}This cannot be undone (the change history keeps a record).`)) return;
+    const paths = [...S.photos.values()].filter(p => p.report_id === id && p.uploaded).map(p => p.storage_path || `${id}/${p.id}.jpg`);
+    const { error } = await sb.from('daily_report').delete().eq('id', id);
+    if (error) return toast('Could not delete: ' + errMsg(error), 6000);
+    if (paths.length) await sb.storage.from('report-photos').remove(paths).catch(() => {});
+  } else if (!confirm(`Delete the report for ${what} from this phone? It has not been sent.`)) return;
+  ED = null; EDIT_OPEN = null;
+  S.reports.delete(id); await DB.del('reports', id);
   for (const p of [...S.photos.values()].filter(p => p.report_id === id)) { S.photos.delete(p.id); await DB.del('photos', p.id); }
-  ED = null; location.hash = '#/';
+  toast('Report deleted.'); location.hash = '#/'; renderNet();
 }
 
 /* ---------------- conflicts ---------------- */
@@ -854,7 +866,7 @@ async function renderView(id) {
   if (photos.length) { await signedUrls(photos); drawPh(); }
 }
 /* ---------------- change history ---------------- */
-const ACTION_LBL = { created: 'Report started', edited: 'Changed', submitted: 'Submitted', replaced: 'Replaced by another report', locked: 'Locked (reviewed)', unlocked: 'Unlocked', photo_added: 'Photo added', photo_removed: 'Photo removed' };
+const ACTION_LBL = { created: 'Report started', edited: 'Changed', submitted: 'Submitted', replaced: 'Replaced by another report', locked: 'Locked (reviewed)', unlocked: 'Unlocked', photo_added: 'Photo added', photo_removed: 'Photo removed', deleted: 'Deleted' };
 const FIELD_LBL = { report_date: 'Date', team_id: 'Team', status: 'Status', key_info: 'Key information', emerging_issues: 'Emerging issues', quotes: 'Quotes' };
 const short = (t, n = 70) => { t = String(t ?? '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : (t || '(empty)'); };
 const kpiLabel = id => (S.kpis.find(k => k.id === id) || {}).label || 'Statistic';

@@ -44,6 +44,7 @@ None are stored here. The publishable key in `site/app.js` is meant to be public
 
 | Version | Date | What changed |
 |---|---|---|
+| 1.3.5 | 17 Nov 2026 | "Delete report" for sent drafts (and for submitted reports, office only); deletions recorded in the change history |
 | 1.3.4 | 17 Nov 2026 | Clearer message when the hourly sign-in email limit is reached |
 | 1.3.3 | 17 Nov 2026 | Sign-in by code from the office (works in the home-screen app); signin-link function also returns the code |
 | 1.3.2 | 17 Nov 2026 | Sign-in links made on the old address now open the new one |
